@@ -1,4 +1,6 @@
 '''
+Crawls Craigslist RSS, which does not contain all postings.
+
 Created on Jun 12, 2013
 
 @author: yuncong

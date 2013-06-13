@@ -1,9 +1,10 @@
 '''
+Crawls Craigslist webpage (the preferred approach).
+
 Created on Jun 13, 2013
 
 @author: yuncong
 '''
-import xml.etree.ElementTree as ET
 import urllib
 import re
 import csv
