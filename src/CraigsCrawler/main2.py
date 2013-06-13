@@ -8,25 +8,28 @@ Created on Jun 13, 2013
 import urllib
 import re
 import csv
+import sys
 
 prefix = 'http://sandiego.craigslist.org'
+
+blacklisted_dealers = ['skyline', 'vtek', 'auto city', 'your choice']
 
 # search_name = 'civic'
 # brand = 'honda'
 # model = 'civic'
-# trim = ['ex','lx','si','dx']
+# trims = ['ex','lx','si','dx']
 
-# search_name = 'fit'
-# brand = 'honda'
-# model = 'fit'
-# trim = ['sport']
+search_name = 'fit'
+brand = 'honda'
+model = 'fit'
+trims = ['sport']
 
-search_name = 'corolla'
-brand = 'toyota'
-model = 'corolla'
-trim = ['s','le','l','dx','xle','xrs','ce']
+# search_name = 'corolla'
+# brand = 'toyota'
+# model = 'corolla'
+# trims = ['s','le','l','dx','xle','xrs','ce']
 
-type = ['sedan','coupe','hatchback']
+types = ['sedan','coupe','hatchback']
 years = [str(y) for y in range(1992,2014)]
 years_short = [y[-2:]for y in years]
 transm = ['automatic','manual']
@@ -34,14 +37,16 @@ srch_year = '2006'
 start = 0
 
 if __name__ == '__main__':
-    url = 'http://sandiego.craigslist.org/search/cta?query='+brand+'%20'+model+'&srchType=T&s='+str(start)
+    url = 'http://sandiego.craigslist.org/search/cta?query='+brand+'+'+model+'&srchType=T&zoomToPosting=&minAsk=&maxAsk=&s='+str(start)
     xml_str = urllib.urlopen(url).read()
-    contents = re.findall('<p class="row" data-pid=".*?">(.*?)</p>', xml_str, re.M|re.S)
+        
+    contents = re.findall('<p class="row" data-.*?>(.*?)</p>', xml_str, re.M|re.S)
     
     keys = ['date','price','title','url','owner','trim','year','type','transm','cond']
     items = []
 
     for c in contents:
+        
         item = dict([(k,None) for k in keys])
         
         item['date'] = re.findall('<span class="date">(.*?)</span>', c)[0]
@@ -72,14 +77,22 @@ if __name__ == '__main__':
                     or re.search('(\W|^| )%s(\W|$| )'%s, title_lower):
                 item['year'] = t
                 break
-        for t in type:
+        for t in types:
             if t in posting_lower or t in title_lower:
                 item['type'] = t
                 break
-        for t in trim:
+        for t in trims:
             if re.search('(\W|^| )%s(\W|$| )'%t, posting_lower) or re.search('(\W|^| )%s(\W|$| )'%t, title_lower):
                 item['trim'] = t
                 break
+
+        blacklisted = False
+        for t in blacklisted_dealers:
+            if re.search('(\W|^| )%s(\W|$| )'%t, posting_lower) or re.search('(\W|^| )%s(\W|$| )'%t, title_lower):
+                blacklisted = True
+                break
+        if blacklisted:
+            continue
         
         if 'salvage' in posting_lower or 'salvage' in title_lower:
             item['cond'] = 'salvage'
@@ -87,7 +100,24 @@ if __name__ == '__main__':
         item['owner'] = re.findall('<a class="gc".*?by (.*?)</a>', c)[0]
         items.append(item)
     
+    item_num = len(items)
+    print str(item_num)+' items collected.'
+    
+    import string
+    items_title = [i['title'].translate(None,string.punctuation) for i in items]
+    items_title_sorted, items_sorted_by_title = zip(*sorted(zip(items_title,items))) 
+    items_is_unique = [True]*item_num
+    for i in range(1,item_num):
+        if items_title_sorted[i] == items_title_sorted[i-1]:
+            items_is_unique[i] = False
+         
+    items_unique = [items_sorted_by_title[i] for i in range(item_num) if items_is_unique[i]]
+    
+    item_unique_num = len(items_unique)
+
+    print str(item_unique_num)+' unique items detected.'
+
     dw = csv.DictWriter(open(search_name+".csv", "wb"), fieldnames=keys)
 #     dw.writerow(dict((fn,fn) for fn in keys))
-    for i in items:
+    for i in items_unique:
         dw.writerow(i)
