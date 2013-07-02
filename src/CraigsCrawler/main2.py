@@ -43,11 +43,14 @@ srch_year = '2006'
 items = []
 
 if __name__ == '__main__':
-    keys = ['date', 'price', 'title', 'url', 'owner', 'trim', 'year', 'type', 'transm', 'cond', 'good']
-    dr = csv.DictReader(open(search_name + ".csv", "rU"), fieldnames=keys)
-    for entry in dr:
-        items.append(entry)
-                 
+    keys = ['date', 'price', 'title', 'url', 'owner', 'trim', 'year', 'type', 'transm', 'cond', 'comment']
+    try:
+        dr = csv.DictReader(open(search_name + ".csv", "rU"), fieldnames=keys)
+        for entry in dr:
+            items.append(entry)
+    except:
+        pass
+                         
     for start in range(0,500,100):
     
         url = 'http://sandiego.craigslist.org/search/cta?query=' + brand + '+' + model + \
@@ -117,7 +120,7 @@ if __name__ == '__main__':
     
     import string
     items_title = [i['title'].translate(None, string.punctuation) for i in items]
-    items_title_sorted, items_sorted_by_title = zip(*sorted(sorted(zip(items_title, items), key=lambda (x,y):y['good']))) 
+    items_title_sorted, items_sorted_by_title = zip(*sorted(sorted(zip(items_title, items), key=lambda (x,y):y['comment']))) 
     items_is_unique = [True] * item_num
     for i in range(0, item_num-1):
         if items_title_sorted[i] == items_title_sorted[i + 1]:
